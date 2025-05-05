@@ -1,4 +1,5 @@
 <br><br><br>
 Here's a glimpse of my project..<br>
-![Image](https://github.com/user-attachments/assets/a5ec81dd-caef-400a-93c6-2239d1ddf66b)
+![image](https://github.com/user-attachments/assets/f3ebe68a-90d2-4295-9fef-124a2bc7f615)
+
 
