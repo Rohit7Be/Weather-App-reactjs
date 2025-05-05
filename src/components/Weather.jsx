@@ -12,12 +12,20 @@ import wind_icon from '../assets/wind.png'
 import location_icon from '../assets/location.png'
 import max_temp from '../assets/hot.png'
 import min_temp from '../assets/cold.png'
+import day from '../assets/day.jpg'
+import night from '../assets/night.jpg'
 
 const Weather = () => {
 
     const inputRef = useRef();
     const [city, setCity] = useState("");
     const [error, setError] = useState("");
+    const [background, setBackground] = useState("");
+    const [localTime, setLocalTime] = useState("");
+
+
+
+
 
     const [weatherData, setWeatherData] = useState(false)
 
@@ -41,15 +49,24 @@ const Weather = () => {
     const getLocation = () => {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(fetchCity, showError);
-            
+
         } else {
             setError("Geolocation is not supported by this browser.");
         }
     };
+    const fetchAQI = async (lat, lon) => {
+        const apiKey = import.meta.env.VITE_APP_ID;
+        const url = `https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${apiKey}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        console.log(data.list[0].main.aqi);
+        return data.list[0].main.aqi; // returns 1-5
+    };
+
     const fetchCity = (position) => {
         const lat = position.coords.latitude;
         const lon = position.coords.longitude;
-        const apiKey = "bda4775b2efbd8737344a14de18f3f68"; 
+        const apiKey = "bda4775b2efbd8737344a14de18f3f68";
         const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}`;
 
         fetch(url)
@@ -68,58 +85,157 @@ const Weather = () => {
     };
 
     // this is the main function that fetches the data from the api about the city weather conditions 
-    
+
     const search = async (city) => {
         if (city === "") {
-            return alert("Please enter a city name")
+            return alert("Please enter a city name");
         }
         try {
-            const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${import.meta.env.VITE_APP_ID}`
-            const res = await fetch(url)
+            // Fetch current weather data to get sunrise, sunset, and other details
+            const currentWeatherUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${import.meta.env.VITE_APP_ID}`;
+            const currentRes = await fetch(currentWeatherUrl);
+            const currentData = await currentRes.json();
 
-            const data = await res.json()
-            if (!res.ok) {
-                alert(data.message);
+            const utcTime = currentData.dt; // Current UTC time in seconds
+            const timezoneOffset = currentData.timezone; // Offset in seconds from UTC
+
+            const localTimestamp = (utcTime + timezoneOffset) * 1000; // Convert to milliseconds
+            const localDate = new Date(localTimestamp);
+            const localTimeObj = new Date(localTimestamp);
+            const localHour = localDate.getUTCHours();// getting the local hour of the city 
+
+
+            const formattedLocalTime = localTimeObj.toUTCString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            });
+
+            setLocalTime(formattedLocalTime);
+            console.log("local hour: ",localHour)
+            console.log("LocalTime UTC String:", localTimeObj.toUTCString());
+
+
+
+            if (!currentRes.ok) {
+                alert(currentData.message);
                 return;
             }
-            console.log(data)
 
-            const icon = allIcons[data.weather[0].icon] || clear_icon
+            const lat = currentData.coord.lat;
+            const lon = currentData.coord.lon;
+            const aqi = await fetchAQI(lat, lon);
+
+
+
+
+
+
+
+
+
+            // Fetch forecast data for hourly data (next 5 days)
+            const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${import.meta.env.VITE_APP_ID}`;
+            const forecastRes = await fetch(forecastUrl);
+            const forecastData = await forecastRes.json();
+            console.log(forecastData);
+
+
+            if (!forecastRes.ok) {
+                alert(forecastData.message);
+                return;
+            }
+
+            const icon = allIcons[currentData.weather[0].icon] || clear_icon;
+
+            if(localHour >=18 || localHour <=6){
+                setBackground(night)
+            }else{
+                setBackground(day)
+            }
+           
+
+            // Extract hourly forecast data for the next 12 hours
+            const hourlyForecast = forecastData.list.slice(0, 11).map(item => ({
+                time: item.dt_txt,
+                temp: Math.floor(item.main.temp),
+                icon: allIcons[item.weather[0].icon],
+                weatherDescription: item.weather[0].description,
+            }));
+
             setWeatherData({
-                humidity: data.main.humidity,
-                feelslike: Math.floor(data.main.feels_like),
-                windspeed: data.wind.speed,
-                temperature: Math.floor(data.main.temp),
-                location: data.name,
+                humidity: currentData.main.humidity,
+                feelslike: Math.floor(currentData.main.feels_like),
+                windspeed: currentData.wind.speed,
+                temperature: Math.floor(currentData.main.temp),
+                location: currentData.name,
                 icon: icon,
-                weatherinfo: data.weather[0].description,
-                maxtmp: Math.floor(data.main.temp_max),
-                mintmp: Math.floor(data.main.temp_min),
+                weatherinfo: currentData.weather[0].description,
+                maxtmp: Math.floor(currentData.main.temp_max),
+                mintmp: Math.floor(currentData.main.temp_min),
+                hourlyForecast: hourlyForecast,
+                aqi: aqi,  // Add hourly forecast data
+            });
 
-            })
-
+            setError("");
 
         } catch (error) {
-            setWeatherData(false)
-            console.error("error while fetching the data", error)
+            setWeatherData(false);
+            console.error("Error while fetching the data", error);
         }
-    }
+    };
+
+
+
 
     useEffect(() => {
-        search("new delhi")
+        getLocation()
 
 
 
     }, [])
 
+    const getAQIColor = (aqi) => {
+        switch (aqi) {
+            case 1: return "#009966"; // Good (Green)
+            case 2: return "#ffde33"; // Fair (Yellow)
+            case 3: return "#ff9933"; // Moderate (Orange)
+            case 4: return "#cc0033"; // Poor (Red)
+            case 5: return "#660099"; // Very Poor (Purple)
+            default: return "#888888"; // Unknown (Gray)
+        }
+    };
+
+    const getAQIDescription = (aqi) => {
+        switch (aqi) {
+            case 1: return "Very Good";
+            case 2: return "Good";
+            case 3: return "Moderate";
+            case 4: return "Poor";
+            case 5: return "Very Poor";
+            default: return "Unknown";
+        }
+    };
+
+
+
+
 
 
     return (
 
-        <div className='weather'>
+        <div className='weather'
+            style={{
+                backgroundImage: `url(${background})`,
+                backgroundSize: 'cover',
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'center',
+                minHeight: '100vh'
+            }}
+        >
             <h1 className='title'>Weather App</h1>
             <div className="search-bar">
-                <img src={location_icon} alt="" onClick={()=>{ getLocation()}}/>
+                <img src={location_icon} alt="" onClick={() => { getLocation() }} />
                 <input type="text" placeholder='Search' ref={inputRef} />
                 <img src={search_icon} alt="" onClick={() => { search(inputRef.current.value) }} />
             </div>
@@ -127,7 +243,23 @@ const Weather = () => {
             <p className='temperature'>{weatherData.temperature}°c</p>
             <p className='feelslike'>Feels like {weatherData.feelslike}°c</p>
             <p className='weatherinfo'>{weatherData.weatherinfo}</p>
+            {weatherData.aqi && (
+                <div className="aqi-info" style={{ color: getAQIColor(weatherData.aqi) }}>
+                    <p>
+                        AQI : {getAQIDescription(weatherData.aqi)}
+                    </p>
+                </div>
+            )}
+
+
             <p className='location'>{weatherData.location}</p>
+
+            <p className="local-time">{localTime.slice(0, 22)}</p>
+
+
+
+
+
             <div className="weather-data">
                 <div className="col">
                     <img src={humidity_icon} alt="" />
@@ -135,9 +267,9 @@ const Weather = () => {
                         <p>{weatherData.humidity}%</p>
                         <span>Humidity</span>
                     </div>
-                    
+
                 </div>
-                
+
                 <div className="col">
                     <img src={wind_icon} alt="" />
                     <div>
@@ -149,22 +281,42 @@ const Weather = () => {
             {/* this second weather data for temp max and min  */}
             <div className="weather-data">
                 <div className="col">
-                    <img src={max_temp} alt="" className='invert_img'/>
+                    <img src={max_temp} alt="" className='invert_img' />
                     <div>
                         <p>{weatherData.maxtmp}°c</p>
                         <span>MAX</span>
                     </div>
-                    
+
                 </div>
-                
+
                 <div className="col">
-                    <img src={min_temp} alt="" className='invert_img'/>
+                    <img src={min_temp} alt="" className='invert_img' />
                     <div>
                         <p>{weatherData.mintmp}°c</p>
                         <span>MIN</span>
                     </div>
                 </div>
             </div>
+            <div className="hourly-forecast">
+                <h2>Hourly Forecast</h2>
+                <div className="forecast-container">
+                    {weatherData && Array.isArray(weatherData.hourlyForecast) ? (
+                        weatherData.hourlyForecast.map((forecast, index) => (
+                            <div key={index} className="forecast-item">
+                                <p>{new Date(forecast.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                <p>{forecast.time.slice(5, 10)}</p>
+                                <img src={forecast.icon} alt={forecast.weatherDescription} />
+                                <p>{forecast.temp}°C</p>
+                                <p>{forecast.weatherDescription}</p>
+                            </div>
+                        ))
+                    ) : (
+                        <p>Loading forecast...</p>
+                    )}
+                </div>
+
+            </div>
+
             <h5 className='footer'>Created By Rohit Singh</h5>
 
         </div>

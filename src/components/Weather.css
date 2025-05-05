@@ -6,6 +6,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    
 }
 
 .search-bar{
@@ -39,7 +40,7 @@
 }
 .temperature{
     font-size: 80px;
-    color: white;
+    color: rgb(255, 254, 254);
     line-height: 1;
 }
 
@@ -87,3 +88,76 @@
     color: white;
     font-weight: 200;
 }
+.hourly-forecast {
+    text-align: center;
+    margin-top: 30px;
+    padding: 10px;
+    background-color: rgba(226, 223, 223, 0.8);
+    border-radius: 10px;
+}
+
+.forecast-container {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 10px 0;
+}
+
+.forecast-item {
+    text-align: center;
+    margin-right: 15px;
+}
+
+.forecast-item img {
+    width: 50px;
+    height: 50px;
+}
+
+.forecast-item p {
+    margin: 5px 0;
+}
+.aqi-info {
+    font-weight: bold;
+    margin-top: 15px;
+    font-size: 18px;
+  }
+
+  
+  .forecast-day {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 10px;
+    border-radius: 12px;
+    text-align: center;
+    min-width: 80px;
+    color: white;
+  }
+  
+  .forecast-desc {
+    font-size: 12px;
+    color: #ccc;
+  }
+  .forecast-container {
+    display: flex;
+    overflow-x: auto;
+    gap: 15px;
+    padding: 10px 0;
+    scrollbar-width: thin;
+    scrollbar-color: #888 transparent;
+    max-width: 500px;
+  }
+  
+  .forecast-container::-webkit-scrollbar {
+    height: 6px;
+  }
+  
+  .forecast-container::-webkit-scrollbar-thumb {
+    background-color: #888;
+    border-radius: 5px;
+  }
+  .local-time{
+    color: white;
+    font-size: 20px;
+    margin-top: 10px;
+    font-weight: 200;
+  }
+  
