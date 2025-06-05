@@ -14,6 +14,8 @@ import max_temp from '../assets/hot.png'
 import min_temp from '../assets/cold.png'
 import day from '../assets/day.jpg'
 import night from '../assets/night.jpg'
+import pressure from '../assets/pressure.png'
+import visibility from '../assets/visibility.png'
 
 const Weather = () => {
 
@@ -112,8 +114,10 @@ const Weather = () => {
             });
 
             setLocalTime(formattedLocalTime);
-            console.log("local hour: ",localHour)
+            console.log("local hour: ", localHour)
             console.log("LocalTime UTC String:", localTimeObj.toUTCString());
+            console.log("currentdata")
+            console.log(currentData)
 
 
 
@@ -125,6 +129,11 @@ const Weather = () => {
             const lat = currentData.coord.lat;
             const lon = currentData.coord.lon;
             const aqi = await fetchAQI(lat, lon);
+
+            // in seconds
+
+
+
 
 
 
@@ -138,6 +147,7 @@ const Weather = () => {
             const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${import.meta.env.VITE_APP_ID}`;
             const forecastRes = await fetch(forecastUrl);
             const forecastData = await forecastRes.json();
+            console.log("forecast data")
             console.log(forecastData);
 
 
@@ -148,12 +158,12 @@ const Weather = () => {
 
             const icon = allIcons[currentData.weather[0].icon] || clear_icon;
 
-            if(localHour >=18 || localHour <=6){
+            if (localHour >= 18 || localHour <= 6) {
                 setBackground(night)
-            }else{
+            } else {
                 setBackground(day)
             }
-           
+
 
             // Extract hourly forecast data for the next 12 hours
             const hourlyForecast = forecastData.list.slice(0, 11).map(item => ({
@@ -173,11 +183,14 @@ const Weather = () => {
                 weatherinfo: currentData.weather[0].description,
                 maxtmp: Math.floor(currentData.main.temp_max),
                 mintmp: Math.floor(currentData.main.temp_min),
+                pressure: currentData.main.pressure,
+                visibility: currentData.visibility / 1000, //convert to km
                 hourlyForecast: hourlyForecast,
-                aqi: aqi,  // Add hourly forecast data
+                aqi: aqi,  // Add hourly forecast data[]
             });
 
             setError("");
+
 
         } catch (error) {
             setWeatherData(false);
@@ -233,7 +246,7 @@ const Weather = () => {
                 minHeight: '100vh'
             }}
         >
-            <h1 className='title'>Weather App</h1>
+            <h1 className='title'>Weathery</h1>
             <div className="search-bar">
                 <img src={location_icon} alt="" onClick={() => { getLocation() }} />
                 <input type="text" placeholder='Search' ref={inputRef} />
@@ -254,7 +267,14 @@ const Weather = () => {
 
             <p className='location'>{weatherData.location}</p>
 
-            <p className="local-time">{localTime.slice(0, 22)}</p>
+            <button className='mapbtn' onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${weatherData.location}`, '_blank')}>
+                📍 Map
+            </button>
+
+
+
+            <p className="local-time"> {localTime.slice(0, 17)}</p>
+            <p className="local-time">Current Time : {localTime.slice(17, 19)} Hour</p>
 
 
 
@@ -297,6 +317,24 @@ const Weather = () => {
                     </div>
                 </div>
             </div>
+            <div className="weather-data">
+                <div className="col">
+                    <img src={pressure} alt="" className='invert_img' />
+                    <div>
+                        <p>{weatherData.pressure} Hpa</p>
+                        <span>Pressure</span>
+                    </div>
+
+                </div>
+
+                <div className="col">
+                    <img src={visibility} alt="" className='invert_img' />
+                    <div>
+                        <p>{weatherData.visibility} Km</p>
+                        <span>Visibility</span>
+                    </div>
+                </div>
+            </div>
             <div className="hourly-forecast">
                 <h2>Hourly Forecast</h2>
                 <div className="forecast-container">
@@ -316,6 +354,8 @@ const Weather = () => {
                 </div>
 
             </div>
+            
+
 
             <h5 className='footer'>Created By Rohit Singh</h5>
 

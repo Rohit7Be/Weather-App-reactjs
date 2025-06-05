@@ -160,4 +160,15 @@
     margin-top: 10px;
     font-weight: 200;
   }
+
+  .mapbtn{
+    background-color: #ebfffc;
+    color: #626262;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 20px;
+  }
   
